@@ -1,15 +1,105 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
+import localFont from "next/font/local";
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+import MenuBar from "./components/MenuBar";
+
+export const sfProDisplay = localFont({
+  src: [
+    {
+      path: "../../public/fonts/sf-pro-display-thin.otf",
+      weight: "100",
+      style: "normal",
+    },
+    {
+      path: "../../public/fonts/sf-pro-display-thinitalic.otf",
+      weight: "100",
+      style: "italic",
+    },
+    {
+      path: "../../public/fonts/sf-pro-display-ultralight.otf",
+      weight: "200",
+      style: "normal",
+    },
+    {
+      path: "../../public/fonts/sf-pro-display-ultralightitalic.otf",
+      weight: "200",
+      style: "italic",
+    },
+    {
+      path: "../../public/fonts/sf-pro-display-light.otf",
+      weight: "300",
+      style: "normal",
+    },
+    {
+      path: "../../public/fonts/sf-pro-display-lightitalic.otf",
+      weight: "300",
+      style: "italic",
+    },
+    {
+      path: "../../public/fonts/sf-pro-display-regular.otf",
+      weight: "400",
+      style: "normal",
+    },
+    {
+      path: "../../public/fonts/sf-pro-display-regularitalic.otf",
+      weight: "400",
+      style: "italic",
+    },
+    {
+      path: "../../public/fonts/sf-pro-display-medium.otf",
+      weight: "500",
+      style: "normal",
+    },
+    {
+      path: "../../public/fonts/sf-pro-display-mediumitalic.otf",
+      weight: "500",
+      style: "italic",
+    },
+    {
+      path: "../../public/fonts/sf-pro-display-semibold.otf",
+      weight: "600",
+      style: "normal",
+    },
+    {
+      path: "../../public/fonts/sf-pro-display-semibolditalic.otf",
+      weight: "600",
+      style: "italic",
+    },
+    {
+      path: "../../public/fonts/sf-pro-display-bold.otf",
+      weight: "700",
+      style: "normal",
+    },
+    {
+      path: "../../public/fonts/sf-pro-display-bolditalic.otf",
+      weight: "700",
+      style: "italic",
+    },
+    {
+      path: "../../public/fonts/sf-pro-display-heavy.otf",
+      weight: "800",
+      style: "normal",
+    },
+    {
+      path: "../../public/fonts/sf-pro-display-heavyitalic.otf",
+      weight: "800",
+      style: "italic",
+    },
+    {
+      path: "../../public/fonts/sf-pro-display-black.otf",
+      weight: "900",
+      style: "normal",
+    },
+    {
+      path: "../../public/fonts/sf-pro-display-blackitalic.otf",
+      weight: "900",
+      style: "italic",
+    },
+  ],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -24,10 +114,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        {children}
+      <body className={`${sfProDisplay.className} antialiased`}>
+        <div className="flex h-screen flex-col bg-[url(/img/SequoiaLightXL.png)] bg-cover bg-center dark:bg-[url(/img/SequoiaDarkXL.png)]">
+          <MenuBar />
+          <div className="flex grow">{children}</div>
+        </div>
       </body>
     </html>
   );
