@@ -23,7 +23,7 @@ const Preview: FC<PreviewProps> = ({ url }) => {
         <span>Preview</span>
       </div>
 
-      <div className="relative flex-1">
+      <div className="relative flex-1 bg-gray-100">
         {isLoading && (
           <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
             <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-gray-800"></div>

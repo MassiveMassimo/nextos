@@ -88,7 +88,7 @@ const WebContainerUI: FC = () => {
 
   if (error) {
     return (
-      <div className="flex h-full items-center justify-center">
+      <div className="flex h-full w-full items-center justify-center">
         <div className="max-w-lg rounded-lg bg-red-100 p-6 text-center">
           <h2 className="mb-2 text-xl font-bold text-red-700">
             Error initializing WebContainer
@@ -100,7 +100,7 @@ const WebContainerUI: FC = () => {
   }
 
   return (
-    <div className="grid h-full w-full grid-cols-2 grid-rows-2 gap-4 p-4">
+    <div className="relative grid h-full w-full grid-cols-2 grid-rows-2 gap-4 p-4">
       <div className="col-span-1 row-span-2">
         <Editor
           initialCode={code}
@@ -118,7 +118,7 @@ const WebContainerUI: FC = () => {
       </div>
 
       {isLoading && (
-        <div className="bg-opacity-75 fixed inset-0 z-50 flex items-center justify-center bg-white">
+        <div className="bg-opacity-75 absolute inset-0 z-50 flex items-center justify-center bg-white">
           <div className="flex flex-col items-center">
             <div className="mb-4 h-12 w-12 animate-spin rounded-full border-b-2 border-gray-800"></div>
             <p className="font-medium text-gray-800">
