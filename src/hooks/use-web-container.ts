@@ -9,6 +9,9 @@ import {
 } from "@/lib/webcontainer";
 import { FileSystemTree, WebContainer } from "@webcontainer/api";
 
+// Global flag to track if WebContainer initialization is in progress
+let isInitializing = false;
+
 type UseWebContainerReturn = {
   webcontainer: WebContainer | null;
 
@@ -36,8 +39,12 @@ export function useWebContainer(): UseWebContainerReturn {
   // Initialize WebContainer
   useEffect(() => {
     async function bootWebContainer() {
+      if (isInitializing) return;
+
       try {
         setLoading(true);
+        isInitializing = true;
+
         const instance = await getWebContainerInstance();
 
         // Listen for server-ready event
@@ -52,6 +59,7 @@ export function useWebContainer(): UseWebContainerReturn {
         setError(err instanceof Error ? err : new Error(String(err)));
       } finally {
         setLoading(false);
+        isInitializing = false;
       }
     }
 

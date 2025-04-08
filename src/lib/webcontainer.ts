@@ -2,17 +2,24 @@ import { FileSystemTree, WebContainer } from "@webcontainer/api";
 
 // Singleton pattern for WebContainer instance
 let webcontainerInstance: WebContainer | null = null;
+let bootPromise: Promise<WebContainer> | null = null;
 
 /**
  * Initializes and returns a WebContainer instance
  * Only creates a new instance if one doesn't already exist
  */
 export async function getWebContainerInstance(): Promise<WebContainer> {
-  if (!webcontainerInstance) {
-    webcontainerInstance = await WebContainer.boot();
-  }
+  if (webcontainerInstance) return webcontainerInstance;
+  if (bootPromise) return bootPromise;
 
-  return webcontainerInstance;
+  // Create a single boot promise that all callers will share
+  bootPromise = WebContainer.boot().then((instance) => {
+    webcontainerInstance = instance;
+    bootPromise = null;
+    return instance;
+  });
+
+  return bootPromise;
 }
 
 /** Writes files to the WebContainer instance */
