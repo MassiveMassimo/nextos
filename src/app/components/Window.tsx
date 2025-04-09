@@ -6,7 +6,6 @@ import { DragControls, motion, useDragControls } from "motion/react";
 
 import { cn } from "@/lib/utils";
 
-// Define a context to pass dragControls down
 const DragContext = React.createContext<DragControls | null>(null);
 
 export function Titlebar({
@@ -16,7 +15,6 @@ export function Titlebar({
   className?: string;
   children: React.ReactNode;
 }>) {
-  // Use the context to get dragControls
   const dragControls = React.useContext(DragContext);
 
   return (
@@ -27,6 +25,20 @@ export function Titlebar({
       )}
       onPointerDown={(event) => dragControls?.start(event)}
     >
+      <div className="mr-4 flex gap-2">
+        <button
+          className="h-3 w-3 rounded-full bg-[#FF5F57] hover:bg-[#FF5F57]/80"
+          aria-label="Close"
+        />
+        <button
+          className="h-3 w-3 rounded-full bg-[#FFBD2E] hover:bg-[#FFBD2E]/80"
+          aria-label="Minimize"
+        />
+        <button
+          className="h-3 w-3 rounded-full bg-[#28C840] hover:bg-[#28C840]/80"
+          aria-label="Maximize"
+        />
+      </div>
       {children}
     </div>
   );
