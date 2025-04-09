@@ -10,7 +10,7 @@ import {
 
 export default function MenuBar() {
   return (
-    <header className="bg-foreground/10 flex h-9 items-center px-1 backdrop-blur-3xl">
+    <header className="bg-foreground/10 flex h-9 shrink-0 items-center px-1 backdrop-blur-3xl">
       <Menubar className="h-8 items-stretch gap-0 border-none bg-transparent shadow-none">
         <MenubarMenu>
           <MenubarTrigger className="p-2.5 before:rounded-tl-2xl">

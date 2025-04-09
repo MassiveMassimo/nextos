@@ -4,7 +4,8 @@ import "./globals.css";
 
 import localFont from "next/font/local";
 
-import MenuBar from "./components/MenuBar";
+import Window, { Titlebar } from "./components/Window";
+import MenuBar from "./modules/menubar/MenuBar";
 
 export const sfProDisplay = localFont({
   src: [
@@ -109,15 +110,23 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
+  finder,
 }: Readonly<{
   children: React.ReactNode;
+  finder: React.ReactNode;
 }>) {
   return (
     <html lang="en">
       <body className={`${sfProDisplay.className} antialiased`}>
         <div className="flex h-screen max-h-screen flex-col overflow-hidden bg-[url(/img/SequoiaLightXL.png)] bg-cover bg-center dark:bg-[url(/img/SequoiaDarkXL.png)]">
           <MenuBar />
-          <div className="flex grow overflow-hidden">{children}</div>
+          <div className="relative flex grow overflow-hidden">
+            {children}
+            <Window>
+              <Titlebar>Window Title</Titlebar>
+              {finder}
+            </Window>
+          </div>
         </div>
       </body>
     </html>
