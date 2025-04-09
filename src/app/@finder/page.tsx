@@ -1,5 +1,10 @@
+import { Titlebar, Window } from "@/app/components/Window";
+
 export default function Finder() {
-    return (
-        <main className="">finder</main>
-    );
+  return (
+    <Window>
+      <Titlebar>Finder</Titlebar>
+      This is finder
+    </Window>
+  );
 }

@@ -4,7 +4,6 @@ import "./globals.css";
 
 import localFont from "next/font/local";
 
-import Window, { Titlebar } from "./components/Window";
 import MenuBar from "./modules/menubar/MenuBar";
 
 export const sfProDisplay = localFont({
@@ -122,10 +121,7 @@ export default function RootLayout({
           <MenuBar />
           <div className="relative flex grow overflow-hidden">
             {children}
-            <Window>
-              <Titlebar>Window Title</Titlebar>
-              {finder}
-            </Window>
+            {finder}
           </div>
         </div>
       </body>

@@ -32,7 +32,7 @@ export function Titlebar({
   );
 }
 
-export default function Window({
+export function Window({
   className,
   children,
 }: Readonly<{
