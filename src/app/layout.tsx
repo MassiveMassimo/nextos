@@ -5,6 +5,7 @@ import "./globals.css";
 import localFont from "next/font/local";
 
 import MenuBar from "./modules/menubar/MenuBar";
+import { Providers } from "./providers";
 
 export const sfProDisplay = localFont({
   src: [
@@ -120,8 +121,10 @@ export default function RootLayout({
         <div className="flex h-screen max-h-screen flex-col overflow-hidden bg-[url(/img/SequoiaLightXL.png)] bg-cover bg-center dark:bg-[url(/img/SequoiaDarkXL.png)]">
           <MenuBar />
           <div className="relative flex grow overflow-hidden">
-            {children}
-            {finder}
+            <Providers>
+              {children}
+              {finder}
+            </Providers>
           </div>
         </div>
       </body>
