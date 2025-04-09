@@ -1,9 +1,15 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useRef } from "react";
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 
-import { motion, useDragControls } from "framer-motion";
 import { useAtom } from "jotai";
+import { motion, useDragControls } from "motion/react";
 
 import { cn } from "@/lib/utils";
 import { activeWindowsAtom } from "./atoms";
@@ -13,6 +19,8 @@ type WindowContextType = {
   id: string;
   dragControls: ReturnType<typeof useDragControls>;
   bringToFront: () => void;
+  isMaximized: boolean;
+  toggleMaximize: () => void;
 };
 
 const WindowContext = createContext<WindowContextType | null>(null);
@@ -34,19 +42,31 @@ export function Titlebar({
   className?: string;
   children: React.ReactNode;
 }>) {
-  const { dragControls, bringToFront } = useWindowContext();
+  const { dragControls, bringToFront, isMaximized, toggleMaximize } =
+    useWindowContext();
 
   const handlePointerDown = (event: React.PointerEvent) => {
-    // Bring window to front when titlebar is clicked
-    bringToFront();
-    // Start drag operation
-    dragControls.start(event);
+    // Don't drag if maximized
+    if (!isMaximized) {
+      // Bring window to front when titlebar is clicked
+      bringToFront();
+      // Start drag operation
+      dragControls.start(event);
+    }
   };
 
   return (
-    <div
+    <motion.div
+      layout="position"
+      transition={{
+        duration: 0.5,
+        ease: [0.32, 0.72, 0, 1],
+      }}
       className={cn(
-        "flex h-10 items-center rounded-t-xl bg-black/5 px-3 dark:bg-white/5",
+        "flex h-10 items-center px-3",
+        isMaximized
+          ? "rounded-none bg-black/10 dark:bg-white/10"
+          : "rounded-t-xl bg-black/5 dark:bg-white/5",
         className,
       )}
       onPointerDown={handlePointerDown}
@@ -63,10 +83,14 @@ export function Titlebar({
         <button
           className="h-3 w-3 rounded-full bg-[#28C840] hover:bg-[#28C840]/80"
           aria-label="Maximize"
+          onClick={(e) => {
+            e.stopPropagation();
+            toggleMaximize();
+          }}
         />
       </div>
       {children}
-    </div>
+    </motion.div>
   );
 }
 
@@ -85,6 +109,9 @@ export function Window({
   const constraintsRef = useRef<HTMLDivElement>(null);
   const dragControls = useDragControls();
   const [activeWindows, setActiveWindows] = useAtom(activeWindowsAtom);
+  const [isMaximized, setIsMaximized] = useState(false);
+  const [position, setPosition] = useState(initialPosition);
+  const [savedPosition, setSavedPosition] = useState(initialPosition);
 
   // Calculate the z-index based on the window's position in the activeWindows array
   const zIndex =
@@ -105,6 +132,20 @@ export function Window({
     });
   };
 
+  // Toggle maximize state
+  const toggleMaximize = () => {
+    if (isMaximized) {
+      // When un-maximizing, restore the previous position
+      setPosition(savedPosition);
+    } else {
+      // When maximizing, save the current position for later
+      setSavedPosition(position);
+      // Reset position to ensure it expands from the center
+      setPosition({ x: 0, y: 0 });
+    }
+    setIsMaximized((prev) => !prev);
+  };
+
   // Add window to activeWindows if not already present
   useEffect(() => {
     if (!activeWindows.includes(id)) {
@@ -120,24 +161,48 @@ export function Window({
   return (
     <div
       ref={constraintsRef}
-      className="absolute -inset-x-full top-0 -bottom-full" // This has weird constrainst on purpose
+      className="absolute -inset-x-full top-0 -bottom-full" // This has weird constraints on purpose
     >
       <motion.div
+        layout
         className={cn(
-          "absolute top-1/4 left-1/2 min-h-[240px] min-w-[320px] -translate-x-1/2 -translate-y-1/2 rounded-xl bg-white/50 shadow-xl shadow-black/20 backdrop-blur-sm dark:bg-black/50 dark:shadow-black/50",
+          "absolute bg-white/50 shadow-xl shadow-black/20 backdrop-blur-sm dark:bg-black/50 dark:shadow-black/50",
+          isMaximized
+            ? "inset-x-1/3 top-0 bottom-1/2 rounded-none"
+            : "top-1/4 left-1/2 min-h-[240px] min-w-[320px] -translate-x-1/2 -translate-y-1/2 rounded-xl",
           className,
         )}
         style={{ zIndex }}
-        drag
+        drag={!isMaximized}
         dragListener={false}
         dragControls={dragControls}
         dragMomentum={false}
         dragConstraints={constraintsRef}
         dragElastic={0}
+        animate={isMaximized ? {} : { x: position.x, y: position.y }}
         initial={{ x: initialPosition.x, y: initialPosition.y }}
         onClick={bringToFront} // Also bring to front when clicking anywhere on the window
+        transition={{
+          duration: 0.5,
+          ease: [0.32, 0.72, 0, 1],
+        }}
+        onDragEnd={(_, info) => {
+          // Update position based on the accumulated offset (delta)
+          setPosition((prevPos) => ({
+            x: prevPos.x + info.offset.x,
+            y: prevPos.y + info.offset.y,
+          }));
+        }}
       >
-        <WindowContext.Provider value={{ id, dragControls, bringToFront }}>
+        <WindowContext.Provider
+          value={{
+            id,
+            dragControls,
+            bringToFront,
+            isMaximized,
+            toggleMaximize,
+          }}
+        >
           {children}
         </WindowContext.Provider>
       </motion.div>
@@ -153,5 +218,22 @@ export function WindowContent({
   className?: string;
   children: React.ReactNode;
 }>) {
-  return <div className={cn("p-4", className)}>{children}</div>;
+  const { isMaximized } = useWindowContext();
+
+  return (
+    <motion.div
+      layout
+      transition={{
+        duration: 0.5,
+        ease: [0.32, 0.72, 0, 1],
+      }}
+      className={cn(
+        "p-4",
+        isMaximized ? "h-[calc(100%-2.5rem)] overflow-auto" : "",
+        className,
+      )}
+    >
+      {children}
+    </motion.div>
+  );
 }
