@@ -2,14 +2,16 @@
 
 import React, {
   createContext,
+  startTransition,
   useContext,
   useEffect,
-  useRef,
   useState,
+  unstable_ViewTransition as ViewTransition,
 } from "react";
 
+import { motion } from "framer-motion";
 import { useAtom } from "jotai";
-import { motion, useDragControls } from "motion/react";
+import { Rnd } from "react-rnd";
 
 import { cn } from "@/lib/utils";
 import { activeWindowsAtom } from "./atoms";
@@ -17,7 +19,6 @@ import { activeWindowsAtom } from "./atoms";
 // Create a context for the Window component to share data with its children
 type WindowContextType = {
   id: string;
-  dragControls: ReturnType<typeof useDragControls>;
   bringToFront: () => void;
   isMaximized: boolean;
   toggleMaximize: () => void;
@@ -42,18 +43,7 @@ export function Titlebar({
   className?: string;
   children: React.ReactNode;
 }>) {
-  const { dragControls, bringToFront, isMaximized, toggleMaximize } =
-    useWindowContext();
-
-  const handlePointerDown = (event: React.PointerEvent) => {
-    // Don't drag if maximized
-    if (!isMaximized) {
-      // Bring window to front when titlebar is clicked
-      bringToFront();
-      // Start drag operation
-      dragControls.start(event);
-    }
-  };
+  const { bringToFront, isMaximized, toggleMaximize } = useWindowContext();
 
   return (
     <motion.div
@@ -63,13 +53,13 @@ export function Titlebar({
         ease: [0.32, 0.72, 0, 1],
       }}
       className={cn(
-        "flex h-10 items-center px-3",
+        "window-titlebar flex h-10 items-center px-3", // Added window-titlebar class
         isMaximized
           ? "rounded-none bg-black/10 dark:bg-white/10"
           : "rounded-t-xl bg-black/5 dark:bg-white/5",
         className,
       )}
-      onPointerDown={handlePointerDown}
+      onClick={bringToFront} // Bring window to front when titlebar is clicked
     >
       <div className="mr-4 flex gap-2">
         <button
@@ -106,12 +96,12 @@ export function Window({
   children: React.ReactNode;
   initialPosition?: { x: number; y: number };
 }>) {
-  const constraintsRef = useRef<HTMLDivElement>(null);
-  const dragControls = useDragControls();
   const [activeWindows, setActiveWindows] = useAtom(activeWindowsAtom);
   const [isMaximized, setIsMaximized] = useState(false);
   const [position, setPosition] = useState(initialPosition);
+  const [size, setSize] = useState({ width: "auto", height: "auto" });
   const [savedPosition, setSavedPosition] = useState(initialPosition);
+  const [savedSize, setSavedSize] = useState({ width: "auto", height: "auto" });
 
   // Calculate the z-index based on the window's position in the activeWindows array
   const zIndex =
@@ -134,16 +124,18 @@ export function Window({
 
   // Toggle maximize state
   const toggleMaximize = () => {
-    if (isMaximized) {
-      // When un-maximizing, restore the previous position
-      setPosition(savedPosition);
-    } else {
-      // When maximizing, save the current position for later
-      setSavedPosition(position);
-      // Reset position to ensure it expands from the center
-      setPosition({ x: 0, y: 0 });
-    }
-    setIsMaximized((prev) => !prev);
+    startTransition(() => {
+      if (isMaximized) {
+        // When un-maximizing, restore the previous position and size
+        setPosition(savedPosition);
+        setSize(savedSize);
+      } else {
+        // When maximizing, save the current position and size for later
+        setSavedPosition(position);
+        setSavedSize(size);
+      }
+      setIsMaximized((prev) => !prev);
+    });
   };
 
   // Add window to activeWindows if not already present
@@ -159,45 +151,44 @@ export function Window({
   }, [id, setActiveWindows, activeWindows]);
 
   return (
-    <div
-      ref={constraintsRef}
-      className="absolute -inset-x-full top-0 -bottom-full" // This has weird constraints on purpose
-    >
-      <motion.div
-        layout
+    <ViewTransition>
+      <Rnd
+        default={{
+          x: initialPosition.x,
+          y: initialPosition.y,
+          width: "auto",
+          height: "auto",
+        }}
+        position={
+          isMaximized ? { x: 0, y: 0 } : { x: position.x, y: position.y }
+        }
+        size={isMaximized ? { width: "100%", height: "100%" } : size}
+        minWidth={320}
+        minHeight={240}
+        dragHandleClassName="window-titlebar" // Use the titlebar as drag handle
+        disableDragging={isMaximized}
+        enableResizing={!isMaximized}
+        onDragStop={(e, d) => {
+          setPosition({ x: d.x, y: d.y });
+        }}
+        onResize={(e, direction, ref, delta, position) => {
+          setSize({
+            width: `${ref.offsetWidth}px`,
+            height: `${ref.offsetHeight}px`,
+          });
+          setPosition(position);
+        }}
+        style={{ zIndex }}
         className={cn(
-          "absolute bg-white/50 shadow-xl shadow-black/20 backdrop-blur-sm dark:bg-black/50 dark:shadow-black/50",
-          isMaximized
-            ? "inset-x-1/3 top-0 bottom-1/2 rounded-none"
-            : "top-1/4 left-1/2 min-h-[240px] min-w-[320px] -translate-x-1/2 -translate-y-1/2 rounded-xl",
+          "bg-white/50 shadow-xl shadow-black/20 backdrop-blur-sm dark:bg-black/50 dark:shadow-black/50",
+          isMaximized ? "rounded-none" : "rounded-xl",
           className,
         )}
-        style={{ zIndex }}
-        drag={!isMaximized}
-        dragListener={false}
-        dragControls={dragControls}
-        dragMomentum={false}
-        dragConstraints={constraintsRef}
-        dragElastic={0}
-        animate={isMaximized ? {} : { x: position.x, y: position.y }}
-        initial={{ x: initialPosition.x, y: initialPosition.y }}
         onClick={bringToFront} // Also bring to front when clicking anywhere on the window
-        transition={{
-          duration: 0.5,
-          ease: [0.32, 0.72, 0, 1],
-        }}
-        onDragEnd={(_, info) => {
-          // Update position based on the accumulated offset (delta)
-          setPosition((prevPos) => ({
-            x: prevPos.x + info.offset.x,
-            y: prevPos.y + info.offset.y,
-          }));
-        }}
       >
         <WindowContext.Provider
           value={{
             id,
-            dragControls,
             bringToFront,
             isMaximized,
             toggleMaximize,
@@ -205,8 +196,8 @@ export function Window({
         >
           {children}
         </WindowContext.Provider>
-      </motion.div>
-    </div>
+      </Rnd>
+    </ViewTransition>
   );
 }
 
