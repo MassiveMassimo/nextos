@@ -9,7 +9,7 @@ import React, {
   unstable_ViewTransition as ViewTransition,
 } from "react";
 
-import { motion } from "framer-motion";
+// import { motion } from "framer-motion";
 import { useAtom } from "jotai";
 import { Rnd } from "react-rnd";
 
@@ -46,12 +46,7 @@ export function Titlebar({
   const { bringToFront, isMaximized, toggleMaximize } = useWindowContext();
 
   return (
-    <motion.div
-      layout="position"
-      transition={{
-        duration: 0.5,
-        ease: [0.32, 0.72, 0, 1],
-      }}
+    <div
       className={cn(
         "window-titlebar flex h-10 items-center px-3", // Added window-titlebar class
         isMaximized
@@ -80,7 +75,7 @@ export function Titlebar({
         />
       </div>
       {children}
-    </motion.div>
+    </div>
   );
 }
 
@@ -212,12 +207,7 @@ export function WindowContent({
   const { isMaximized } = useWindowContext();
 
   return (
-    <motion.div
-      layout
-      transition={{
-        duration: 0.5,
-        ease: [0.32, 0.72, 0, 1],
-      }}
+    <div
       className={cn(
         "p-4",
         isMaximized ? "h-[calc(100%-2.5rem)] overflow-auto" : "",
@@ -225,6 +215,6 @@ export function WindowContent({
       )}
     >
       {children}
-    </motion.div>
+    </div>
   );
 }
