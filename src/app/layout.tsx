@@ -4,6 +4,7 @@ import "./globals.css";
 
 import localFont from "next/font/local";
 
+import Dock from "./modules/dock/Dock";
 import MenuBar from "./modules/menubar/MenuBar";
 import { Providers } from "./providers";
 
@@ -119,13 +120,14 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${sfProDisplay.className} antialiased`}>
         <div className="flex h-screen max-h-screen flex-col overflow-hidden bg-[url(/img/SequoiaLightXL.png)] bg-cover bg-center dark:bg-[url(/img/SequoiaDarkXL.png)]">
-          <MenuBar />
-          <div className="relative flex grow overflow-hidden">
-            <Providers>
+          <Providers>
+            <MenuBar />
+            <div className="relative flex grow flex-col min-h-0">
               {children}
               {finder}
-            </Providers>
-          </div>
+            </div>
+            <Dock />
+          </Providers>
         </div>
       </body>
     </html>
