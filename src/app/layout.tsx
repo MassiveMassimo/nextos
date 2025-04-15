@@ -112,9 +112,11 @@ export const metadata: Metadata = {
 export default function RootLayout({
   children,
   finder,
+  arc,
 }: Readonly<{
   children: React.ReactNode;
   finder: React.ReactNode;
+  arc: React.ReactNode;
 }>) {
   return (
     <html lang="en">
@@ -122,9 +124,10 @@ export default function RootLayout({
         <div className="flex h-screen max-h-screen flex-col overflow-hidden bg-[url(/img/SequoiaLightXL.png)] bg-cover bg-center dark:bg-[url(/img/SequoiaDarkXL.png)]">
           <Providers>
             <MenuBar />
-            <div className="relative flex grow flex-col min-h-0">
+            <div className="relative flex min-h-0 grow flex-col">
               {children}
               {finder}
+              {arc}
             </div>
             <Dock />
           </Providers>

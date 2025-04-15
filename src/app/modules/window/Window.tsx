@@ -9,12 +9,16 @@ import React, {
   unstable_ViewTransition as ViewTransition,
 } from "react";
 
-// import { motion } from "framer-motion";
 import { useAtom } from "jotai";
 import { Rnd } from "react-rnd";
 
 import { cn } from "@/lib/utils";
-import { activeWindowsAtom } from "./atoms";
+import {
+  activeWindowsAtom,
+  WindowState,
+  windowStatesAtom,
+  windowUtils,
+} from "../atoms";
 
 // Create a context for the Window component to share data with its children
 type WindowContextType = {
@@ -22,6 +26,8 @@ type WindowContextType = {
   bringToFront: () => void;
   isMaximized: boolean;
   toggleMaximize: () => void;
+  minimizeWindow: () => void;
+  closeWindow: () => void;
 };
 
 const WindowContext = createContext<WindowContextType | null>(null);
@@ -43,27 +49,41 @@ export function Titlebar({
   className?: string;
   children: React.ReactNode;
 }>) {
-  const { bringToFront, isMaximized, toggleMaximize } = useWindowContext();
+  const {
+    bringToFront,
+    isMaximized,
+    toggleMaximize,
+    minimizeWindow,
+    closeWindow,
+  } = useWindowContext();
 
   return (
     <div
       className={cn(
-        "window-titlebar flex h-10 items-center px-3", // Added window-titlebar class
+        "window-titlebar flex h-10 items-center px-3",
         isMaximized
           ? "rounded-none bg-black/10 dark:bg-white/10"
           : "rounded-t-xl bg-black/5 dark:bg-white/5",
         className,
       )}
-      onClick={bringToFront} // Bring window to front when titlebar is clicked
+      onClick={bringToFront}
     >
       <div className="mr-4 flex gap-2">
         <button
           className="h-3 w-3 rounded-full bg-[#FF5F57] hover:bg-[#FF5F57]/80"
           aria-label="Close"
+          onClick={(e) => {
+            e.stopPropagation();
+            closeWindow();
+          }}
         />
         <button
           className="h-3 w-3 rounded-full bg-[#FFBD2E] hover:bg-[#FFBD2E]/80"
           aria-label="Minimize"
+          onClick={(e) => {
+            e.stopPropagation();
+            minimizeWindow();
+          }}
         />
         <button
           className="h-3 w-3 rounded-full bg-[#28C840] hover:bg-[#28C840]/80"
@@ -84,7 +104,7 @@ export function Window({
   id,
   className,
   children,
-  initialPosition = { x: 0, y: 0 },
+  initialPosition = { x: 100, y: 100 },
 }: Readonly<{
   id: string;
   className?: string;
@@ -92,11 +112,18 @@ export function Window({
   initialPosition?: { x: number; y: number };
 }>) {
   const [activeWindows, setActiveWindows] = useAtom(activeWindowsAtom);
+  const [windowStates, setWindowStates] = useAtom(windowStatesAtom);
   const [isMaximized, setIsMaximized] = useState(false);
   const [position, setPosition] = useState(initialPosition);
   const [size, setSize] = useState({ width: "auto", height: "auto" });
   const [savedPosition, setSavedPosition] = useState(initialPosition);
   const [savedSize, setSavedSize] = useState({ width: "auto", height: "auto" });
+
+  // Get this window's state
+  const windowState = windowStates[id];
+
+  // Check if window is in the activeWindows array
+  const isInActiveWindows = activeWindows.includes(id);
 
   // Calculate the z-index based on the window's position in the activeWindows array
   const zIndex =
@@ -106,15 +133,16 @@ export function Window({
 
   // Function to bring this window to the front of others
   const bringToFront = () => {
-    setActiveWindows((prev) => {
-      // If window isn't in the array or already at the front, don't change anything
-      if (prev[0] === id) return prev;
+    if (activeWindows[0] === id) return; // Already at front
 
-      // Remove the window ID from its current position
-      const filteredWindows = prev.filter((windowId) => windowId !== id);
-      // Add it to the front of the array
-      return [id, ...filteredWindows];
-    });
+    const { newWindowStates, newActiveWindows } = windowUtils.activateWindow(
+      id,
+      windowStates,
+      activeWindows,
+    );
+
+    setWindowStates(newWindowStates as Record<string, WindowState>);
+    setActiveWindows(newActiveWindows);
   };
 
   // Toggle maximize state
@@ -133,17 +161,43 @@ export function Window({
     });
   };
 
-  // Add window to activeWindows if not already present
-  useEffect(() => {
-    if (!activeWindows.includes(id)) {
-      setActiveWindows((prev) => [...prev, id]);
-    }
+  // Function to minimize the window
+  const minimizeWindow = () => {
+    const { newWindowStates, newActiveWindows } = windowUtils.minimizeWindow(
+      id,
+      windowStates,
+      activeWindows,
+    );
 
-    // Clean up by removing window from activeWindows when unmounted
-    return () => {
-      setActiveWindows((prev) => prev.filter((windowId) => windowId !== id));
-    };
-  }, [id, setActiveWindows, activeWindows]);
+    setWindowStates(newWindowStates as Record<string, WindowState>);
+    setActiveWindows(newActiveWindows);
+  };
+
+  // Function to close the window
+  const closeWindow = () => {
+    const { newWindowStates, newActiveWindows } = windowUtils.closeWindow(
+      id,
+      windowStates as Record<string, WindowState>,
+      activeWindows,
+    );
+
+    setWindowStates(newWindowStates as Record<string, WindowState>);
+    setActiveWindows(newActiveWindows);
+  };
+
+  // We remove the auto-initialization effect since we only want
+  // windows to be rendered if they're explicitly added to activeWindows
+  // This prevents windows from automatically activating themselves
+
+  // Don't render if window is minimized or closed OR not in activeWindows array
+  if (
+    windowState === "minimized" ||
+    windowState === "closed" ||
+    !windowState ||
+    !isInActiveWindows
+  ) {
+    return null;
+  }
 
   return (
     <ViewTransition>
@@ -160,7 +214,7 @@ export function Window({
         size={isMaximized ? { width: "100%", height: "100%" } : size}
         minWidth={320}
         minHeight={240}
-        dragHandleClassName="window-titlebar" // Use the titlebar as drag handle
+        dragHandleClassName="window-titlebar"
         disableDragging={isMaximized}
         enableResizing={!isMaximized}
         onDragStop={(e, d) => {
@@ -179,7 +233,7 @@ export function Window({
           isMaximized ? "rounded-none" : "rounded-xl",
           className,
         )}
-        onClick={bringToFront} // Also bring to front when clicking anywhere on the window
+        onClick={bringToFront}
       >
         <WindowContext.Provider
           value={{
@@ -187,6 +241,8 @@ export function Window({
             bringToFront,
             isMaximized,
             toggleMaximize,
+            minimizeWindow,
+            closeWindow,
           }}
         >
           {children}

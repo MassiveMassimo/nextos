@@ -2,6 +2,7 @@
 
 import { ReactNode, useRef } from "react";
 
+import { useAtom } from "jotai";
 import {
   animate,
   motion,
@@ -13,6 +14,12 @@ import {
 import Image from "next/image";
 
 import * as Tooltip from "@radix-ui/react-tooltip";
+import {
+  activeWindowsAtom,
+  WindowState,
+  windowStatesAtom,
+  windowUtils,
+} from "../atoms";
 
 const SCALE = 2.25; // max scale factor of an icon
 const DISTANCE = 300; // pixels before mouse affects an icon
@@ -24,10 +31,9 @@ const SPRING = {
 };
 const APPS = [
   "finder",
-  "safari",
   "arc",
   "ghostty",
-  "photos",
+  "cursor",
   "notes",
   "calendar",
   "reminders",
@@ -53,17 +59,15 @@ export default function Dock() {
         mouseLeft.set(-Infinity);
         mouseRight.set(-Infinity);
       }}
-      className="relative z-10 mx-auto hidden h-18 shrink-0 items-end px-1 pb-1 sm:flex mb-1"
+      className="relative z-10 mx-auto mb-1 hidden h-20 shrink-0 items-end px-1 pb-3 sm:flex"
     >
       <motion.div
-        className="absolute inset-y-0 -z-10 rounded-2xl border border-white/30 bg-white/30 backdrop-blur-3xl"
+        className="absolute inset-y-0 -z-10 rounded-3xl border border-white/30 bg-white/40 backdrop-blur-3xl"
         style={{ left: leftSpring, right: rightSpring }}
       />
 
-      {Array.from(Array(APPS.length).keys()).map((i) => (
-        <AppIcon key={i} mouseLeft={mouseLeft}>
-          {APPS[i]}
-        </AppIcon>
+      {APPS.map((appId) => (
+        <AppIcon key={appId} mouseLeft={mouseLeft} appId={appId} />
       ))}
     </motion.nav>
   );
@@ -71,12 +75,19 @@ export default function Dock() {
 
 function AppIcon({
   mouseLeft,
-  children,
+  appId,
 }: {
   mouseLeft: MotionValue;
-  children: ReactNode;
+  appId: string;
 }) {
   const ref = useRef<HTMLButtonElement>(null);
+  const [activeWindows, setActiveWindows] = useAtom(activeWindowsAtom);
+  const [windowStates, setWindowStates] = useAtom(windowStatesAtom);
+
+  // Check if the app is actually running (exists in windowStates and is active or minimized)
+  const isAppRunning =
+    windowStates[appId] != null &&
+    (windowStates[appId] === "active" || windowStates[appId] === "minimized");
 
   const distance = useTransform(() => {
     const bounds = ref.current
@@ -86,9 +97,13 @@ function AppIcon({
     return mouseLeft.get() - bounds.x - bounds.width / 2;
   });
 
-  const scaleFactor = useTransform(distance, [-DISTANCE, 0, DISTANCE], [1, SCALE, 1]);
-  const size = useTransform(scaleFactor, (s) => `${4 * s}rem`); // Convert scale factor to rem size (16px * 4 = 64px base size)
-  
+  const scaleFactor = useTransform(
+    distance,
+    [-DISTANCE, 0, DISTANCE],
+    [1, SCALE, 1],
+  );
+  const size = useTransform(scaleFactor, (s) => `${4 * s}rem`);
+
   const x = useTransform(() => {
     const d = distance.get();
     if (d === -Infinity) {
@@ -110,13 +125,28 @@ function AppIcon({
         <Tooltip.Trigger asChild>
           <motion.button
             ref={ref}
-            style={{ 
-              // x: xSpring, 
-              width: sizeSpring, 
-              height: sizeSpring, 
-              y 
+            style={{
+              // x: xSpring, // Uncomment if you want horizontal movement
+              width: sizeSpring,
+              height: sizeSpring,
+              y,
             }}
             onClick={() => {
+              const currentState = windowStates[appId];
+
+              // If the window is already active or minimized, just bring it to front without animation
+              if (currentState === "active" || currentState === "minimized") {
+                const { newWindowStates, newActiveWindows } = windowUtils.activateWindow(
+                  appId,
+                  windowStates,
+                  activeWindows,
+                );
+                setWindowStates(newWindowStates as Record<string, WindowState>);
+                setActiveWindows(newActiveWindows);
+                return;
+              }
+
+              // Start bounce animation for opening new apps
               animate(y, [0, -40, 0], {
                 repeat: 2,
                 ease: [
@@ -124,17 +154,33 @@ function AppIcon({
                   [0.8, 0, 1, 1],
                 ],
                 duration: 0.7,
+                onComplete: () => {
+                  const {
+                    newWindowStates: result,
+                    newActiveWindows: activeResult,
+                  } = windowUtils.activateWindow(
+                    appId,
+                    windowStates,
+                    activeWindows,
+                  );
+
+                  setWindowStates(result as Record<string, WindowState>);
+                  setActiveWindows(activeResult);
+                },
               });
             }}
             className="block origin-bottom"
           >
             <Image
-              src={`/icons/${children}.webp`}
+              src={`/icons/${appId}.webp`}
               width={1024}
               height={1024}
-              alt={String(children)}
-              className="w-full h-full"
+              alt={appId}
+              className="h-full w-full"
             />
+            {isAppRunning && (
+              <div className="bg-foreground mx-auto size-1 rounded-full"></div>
+            )}
           </motion.button>
         </Tooltip.Trigger>
         <Tooltip.Portal>
@@ -142,7 +188,7 @@ function AppIcon({
             sideOffset={10}
             className="rounded border border-gray-600 bg-gray-700 px-2 py-1.5 text-sm font-medium text-white capitalize shadow shadow-black"
           >
-            {children}
+            {appId}
             <Tooltip.Arrow />
           </Tooltip.Content>
         </Tooltip.Portal>
