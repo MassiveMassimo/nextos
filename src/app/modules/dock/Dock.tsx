@@ -59,10 +59,10 @@ export default function Dock() {
         mouseLeft.set(-Infinity);
         mouseRight.set(-Infinity);
       }}
-      className="relative z-10 mx-auto mb-1 hidden h-20 shrink-0 items-end px-1 pb-3 sm:flex"
+      className="fixed bottom-1 left-1/2 z-10 mx-auto hidden h-20 shrink-0 -translate-x-1/2 items-end px-1 pb-3 sm:flex"
     >
       <motion.div
-        className="absolute inset-y-0 -z-10 rounded-3xl border border-white/30 bg-white/40 backdrop-blur-3xl"
+        className="absolute inset-y-0 -z-10 rounded-3xl border border-slate-200/30 bg-white/40 backdrop-blur-3xl"
         style={{ left: leftSpring, right: rightSpring }}
       />
 
@@ -136,11 +136,12 @@ function AppIcon({
 
               // If the window is already active or minimized, just bring it to front without animation
               if (currentState === "active" || currentState === "minimized") {
-                const { newWindowStates, newActiveWindows } = windowUtils.activateWindow(
-                  appId,
-                  windowStates,
-                  activeWindows,
-                );
+                const { newWindowStates, newActiveWindows } =
+                  windowUtils.activateWindow(
+                    appId,
+                    windowStates,
+                    activeWindows,
+                  );
                 setWindowStates(newWindowStates as Record<string, WindowState>);
                 setActiveWindows(newActiveWindows);
                 return;

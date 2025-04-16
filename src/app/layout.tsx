@@ -121,7 +121,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${sfProDisplay.className} antialiased`}>
-        <div className="flex h-screen max-h-screen flex-col overflow-hidden bg-[url(/img/SequoiaLightXL.png)] bg-cover bg-center dark:bg-[url(/img/SequoiaDarkXL.png)]">
+        <div className="flex h-screen max-h-screen flex-col overflow-clip bg-[url(/img/SequoiaLightXL.png)] bg-cover bg-center bg-no-repeat dark:bg-[url(/img/SequoiaDarkXL.png)]">
           <Providers>
             <MenuBar />
             <div className="relative flex min-h-0 grow flex-col">

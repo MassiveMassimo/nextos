@@ -16,12 +16,13 @@
     "@webcontainer/api": "^1.5.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "jotai": "^2.12.2",
-    "lucide-react": "^0.487.0",
-    "motion": "^12.6.5",
+    "jotai": "^2.12.3",
+    "lucide-react": "^0.488.0",
+    "motion": "^12.7.3",
     "next": "15.3.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
+    "react-resizable-panels": "^2.1.7",
     "react-rnd": "^10.5.2",
     "tailwind-merge": "^3.2.0",
     "tw-animate-css": "^1.2.5"
@@ -29,17 +30,17 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",
     "@ianvs/prettier-plugin-sort-imports": "^4.4.1",
-    "@iconify-json/simple-icons": "^1.2.31",
+    "@iconify-json/simple-icons": "^1.2.32",
     "@iconify/tailwind4": "^1.0.6",
-    "@tailwindcss/postcss": "^4.1.3",
+    "@tailwindcss/postcss": "^4.1.4",
     "@types/node": "^22.14.1",
-    "@types/react": "^19.1.1",
+    "@types/react": "^19.1.2",
     "@types/react-dom": "^19.1.2",
     "eslint": "^9.24.0",
     "eslint-config-next": "15.3.0",
     "prettier": "^3.5.3",
     "prettier-plugin-tailwindcss": "^0.6.11",
-    "tailwindcss": "^4.1.3",
+    "tailwindcss": "^4.1.4",
     "typescript": "^5.8.3"
   }
 }
